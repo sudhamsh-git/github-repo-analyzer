@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>GitHub Repo Analyzer</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        .chart-container {
+            position: relative;
+            height: 300px;
+            margin-bottom: 2rem;
+        }
+        .stat-card {
+            border-radius: 8px;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+    </style>
+</head>
+<body>
+    <div class="container py-4">
+        <div class="upload-section card shadow-sm mb-5 p-4 text-center bg-gradient" style="background: linear-gradient(135deg, #f8fafc 60%, #e9ecef 100%);">
+    <h1 class="mb-3 text-primary">
+        <i class="bi bi-github" style="font-size:2.5rem;"></i>
+        GitHub Repository Analyzer
+    </h1>
+    <p class="lead text-secondary mb-4">
+        <i class="bi bi-lightbulb-fill text-warning me-2"></i>
+        Enter a public GitHub repository link below to get instant insights and visualizations.
+    </p>
+    <form method="POST" class="mt-3">
+
+        <div class="input-group input-group-lg justify-content-center" style="max-width:600px;margin:auto;">
+            <span class="input-group-text bg-white border-end-0" style="border-radius: 2rem 0 0 2rem;">
+                <i class="bi bi-link-45deg text-info"></i>
+            </span>
+            <input type="text" name="repo_url" class="form-control border-start-0 border-end-0 bg-white" style="border-radius: 0;" placeholder="owner/repo or https://github.com/owner/repo" required>
+            <button type="submit" class="btn btn-success px-4" style="border-radius: 0 2rem 2rem 0;">
+                <i class="bi bi-search me-1"></i> Analyze
+            </button>
+        </div>
+    </form>
+</div>
+
+        {% if error %}
+            <div class="alert alert-danger">{{ error }}</div>
+        {% elif data %}
+            <div class="row mb-4">
+                <div class="col-12">
+                    <div class="card shadow-sm mb-4" style="background: linear-gradient(135deg, #f8fafc 60%, #e9ecef 100%); border: 1px solid #e9ecef;">
+    <div class="card-header bg-primary text-white d-flex align-items-center" style="background: linear-gradient(90deg, #4f8cff 60%, #67d7fa 100%) !important;">
+        <i class="bi bi-info-circle-fill me-2"></i>
+        <h4 class="mb-0">Repository Metadata</h4>
+    </div>
+    <div class="card-body">
+        <table class="table table-bordered table-striped mb-0">
+                                <tbody>
+                                    <tr><th>Name</th><td>{{ data.name }}</td></tr>
+                                    <tr><th>Description</th><td>{{ data.description }}</td></tr>
+                                    <tr><th>Stars</th><td>{{ data.stargazers_count }}</td></tr>
+                                    <tr><th>Forks</th><td>{{ data.forks_count }}</td></tr>
+                                    <tr><th>Watchers</th><td>{{ data.watchers_count }}</td></tr>
+                                    <tr><th>GitHub Link</th><td><a href="{{ data.repo_url }}" target="_blank">{{ data.repo_url }}</a></td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {% if data.contributors %}
+            <div class="card shadow-sm mb-4" style="background: linear-gradient(135deg, #f8fafc 60%, #e9ecef 100%); border: 1px solid #e9ecef;">
+    <div class="card-header text-white d-flex align-items-center" style="background: linear-gradient(90deg, #36b37e 60%, #43e97b 100%) !important;">
+        <i class="bi bi-people-fill me-2"></i>
+        <h5 class="mb-0">Top Contributors</h5>
+    </div>
+    <div class="card-body">
+    <div class="contributors-section">
+        <div class="text-center mb-2">
+            <h6 class="mb-1" style="font-size:1.25rem;font-weight:600;">Contributor Share (Top 10)</h6>
+            <div class="text-muted mb-3" style="font-size:1rem;">Pie chart showing the relative contributions of the top 10 contributors.</div>
+        </div>
+        <figure class="contributors-chart mb-4">
+            <canvas id="contributorsChart"></canvas>
+        </figure>
+        <div class="table-responsive mt-2">
+            <table class="table table-sm table-bordered table-striped contributors-table mb-0" style="font-size:0.98rem;">
+                <thead>
+                    <tr>
+                        <th>Username</th>
+                        <th>Contributions</th>
+                        <th>Profile</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for c in data.contributors %}
+                    <tr>
+                        <td>{{ c.login }}</td>
+                        <td>{{ c.contributions }}</td>
+                        <td><a href="{{ c.html_url }}" target="_blank">View Profile</a></td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            {% if data.commit_activity %}
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="card shadow-sm mb-4" style="background: linear-gradient(135deg, #f8fafc 60%, #e9ecef 100%); border: 1px solid #e9ecef;">
+                        <div class="card-header text-white d-flex align-items-center" style="background: linear-gradient(90deg, #4fc3f7 60%, #67d7fa 100%) !important;">
+                            <i class="bi bi-bar-chart-fill me-2"></i>
+                            <h5 class="mb-0">Commit Activity</h5>
+                        </div>
+                        <div class="card-body">
+                            <p class="mb-2">This chart visualizes the hourly distribution of the <strong>latest 100 commits</strong> in the repository (UTC time).</p>
+                            <figure class="chart-container">
+                                <canvas id="hourlyChart"></canvas>
+                            </figure>
+                        </div>
+                    </div>
+                </div>
+                <!-- <div class="col-md-6">
+                    ...
+                </div> -->
+                <div class="col-md-6">
+                    <div class="card shadow-sm mb-4">
+                        <div class="card-header bg-warning text-dark">
+                            <h5 class="mb-0">Commits by Weekday</h5>
+                        </div>
+                        <div class="card-body">
+                            <p class="mb-2">This chart highlights which weekdays had the most commit activity based on the <strong>latest 100 commits</strong> from the repository.</p>
+                            <figure class="chart-container">
+                                <figcaption class="text-center mb-2">Commit Frequency by Weekday</figcaption>
+                                <canvas id="weekdayChart"></canvas>
+                            </figure>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row mb-4">
+                <div class="col-12 mb-4">
+                    <div class="card shadow-sm">
+                        <div class="card-header bg-warning text-white"><i class="bi bi-activity"></i> Commits per Day (Frequency)</div>
+                        <div class="card-body">
+                            <canvas id="dayChart" height="120"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="row mb-4">
+                <div class="col-12">
+                    <div id="streaksSummary"></div>
+                </div>
+            </div>
+            {% endif %}
+
+            {% if data.commits %}
+            <div class="card shadow-sm mb-4" style="background: linear-gradient(135deg, #f8fafc 60%, #e9ecef 100%); border: 1px solid #e9ecef;">
+    <div class="card-header text-white d-flex align-items-center" style="background: linear-gradient(90deg, #36b37e 60%, #43e97b 100%) !important;">
+        <i class="bi bi-clock-history me-2"></i>
+        <h5 class="mb-0">Recent Commits</h5>
+    </div>
+    <div class="card-body">
+                    <p class="mb-2">The table below lists the most recent commits (up to 10).</p>
+                    <div class="table-responsive">
+                        <table class="table table-sm table-bordered table-striped mb-0">
+                            <thead>
+                                <tr>
+                                    <th>SHA</th>
+                                    <th>Author</th>
+                                    <th>Date</th>
+                                    <th>Message</th>
+                                    <th>View</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for commit in data.commits %}
+                                <tr>
+                                    <td style="font-size:0.85em;">{{ commit.sha[:7] }}</td>
+                                    <td>{{ commit.commit.author.name }}</td>
+                                    <td>{{ commit.commit.author.date|format_date }}</td>
+                                    <td style="max-width:200px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ commit.commit.message }}</td>
+                                    <td><a href="{{ commit.html_url }}" target="_blank">View</a></td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <script>
+            document.addEventListener('DOMContentLoaded', function() {
+                // Contributors Chart
+                {% if data and data.contributors %}
+                let contributors = {{ data.contributors|tojson|safe }};
+                if (contributors.length > 0) {
+                    let contributorNames = contributors.map(c => c.login);
+                    let contributorCounts = contributors.map(c => c.contributions);
+                    let contributorsCtx = document.getElementById('contributorsChart');
+                    if (contributorsCtx) {
+                        new Chart(contributorsCtx.getContext('2d'), {
+                            type: 'doughnut',
+                            data: {
+                                labels: contributorNames,
+                                datasets: [{
+                                    data: contributorCounts,
+                                    backgroundColor: [
+                                        '#4f8cff', // blue
+                                        '#36b37e', // green
+                                        '#ffd166', // yellow
+                                        '#f7b731', // orange
+                                        '#ff6f61', // red
+                                        '#4fc3f7', // light blue
+                                        '#43e97b', // teal
+                                        '#adb5bd', // gray
+                                        '#ffb199', // pink
+                                        '#67d7fa'  // cyan
+                                    ]
+                                }]
+                            },
+                            options: {
+                                responsive: true,
+                                plugins: { legend: { position: 'bottom' } }
+                            }
+                        });
+                    }
+                }
+                {% endif %}
+
+                // Commit Activity Charts
+                {% if data and data.commit_activity %}
+                let commitByHour = {{ data.commit_activity.by_hour|tojson|safe }};
+                let commitByWeekday = {{ data.commit_activity.by_weekday|tojson|safe }};
+                let commitByMonthOverYears = {{ data.commit_activity.by_month_over_years|tojson|safe }};
+                let commitByYear = {{ data.commit_activity.by_year|tojson|safe }};
+                let commitByDay = {{ data.commit_activity.by_day|tojson|safe }};
+                let streaks = {{ data.commit_activity.streaks|tojson|safe }};
+                // By Hour
+                let hourlyLabels = Object.keys(commitByHour);
+                let hourlyCounts = Object.values(commitByHour);
+                let hourlyCtx = document.getElementById('hourlyChart');
+                if (hourlyCtx) {
+                    new Chart(hourlyCtx.getContext('2d'), {
+                        type: 'bar',
+                        data: {
+                            labels: hourlyLabels,
+                            datasets: [{
+                                label: 'Commits',
+                                backgroundColor: [
+                                    '#4f8cff', '#67d7fa', '#4fc3f7', '#a2d9ff', '#b3e5fc', '#67d7fa', '#4f8cff', '#a2d9ff', '#b3e5fc', '#67d7fa', '#4f8cff', '#67d7fa', '#4fc3f7', '#a2d9ff', '#b3e5fc', '#67d7fa', '#4f8cff', '#a2d9ff', '#b3e5fc', '#67d7fa', '#4f8cff', '#67d7fa', '#4fc3f7', '#a2d9ff'
+                                ],
+                                data: hourlyCounts
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            scales: { y: { beginAtZero: true } }
+                        }
+                    });
+                }
+                // By Weekday
+                let weekdayLabels = Object.keys(commitByWeekday);
+                let weekdayCounts = Object.values(commitByWeekday);
+                let weekdayCtx = document.getElementById('weekdayChart');
+                if (weekdayCtx) {
+                    new Chart(weekdayCtx.getContext('2d'), {
+                        type: 'bar',
+                        data: {
+                            labels: weekdayLabels,
+                            datasets: [{
+                                label: 'Commits',
+                                backgroundColor: [
+                                    '#ffd166', '#ffe066', '#fff3bf', '#ffe066', '#ffd166', '#f7b731', '#ffe066'
+                                ],
+                                data: weekdayCounts
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            scales: { y: { beginAtZero: true } }
+                        }
+                    });
+                }
+                // By Month Over Years (YYYY-MM) as Line Chart - sorted
+                // Commits by Month and Year graphs removed from JS
+                // By Day (frequency) as Line Chart, grouped by month, days start from 1
+                let commitByDaySorted = Object.keys(commitByDay).sort();
+                // Use full date string as label for every day
+                let groupedDayLabels = commitByDaySorted.slice();
+                let groupedDayCounts = commitByDaySorted.map(d => commitByDay[d]);
+                let dayCtx = document.getElementById('dayChart');
+                if (dayCtx) {
+                    new Chart(dayCtx.getContext('2d'), {
+                        type: 'line',
+                        data: {
+                            labels: groupedDayLabels,
+                            datasets: [{
+                                label: 'Commits per Day',
+                                borderColor: '#ff6f61',
+                                backgroundColor: 'rgba(255,111,97,0.1)',
+                                fill: true,
+                                data: groupedDayCounts,
+                                tension: 0.25
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            scales: { y: { beginAtZero: true } },
+                            plugins: {
+                                legend: { display: false },
+                                tooltip: { mode: 'index', intersect: false }
+                            }
+                        }
+                    });
+                }
+                // Streaks summary
+                let streaksDiv = document.getElementById('streaksSummary');
+                if (streaksDiv && streaks) {
+                    streaksDiv.innerHTML = `<div class='alert alert-info mb-2'><i class='bi bi-fire text-danger'></i> <b>Longest Commit Streak:</b> ${streaks.longest} days<br><i class='bi bi-lightning-charge text-warning'></i> <b>Current Commit Streak:</b> ${streaks.current} days</div>`;
+                }
+                {% endif %}
+            });
+            </script>
+        {% endif %}
+    </div>
+</body>
+</html>
