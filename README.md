@@ -4,7 +4,7 @@ A web application to visualize commit activity, contributors, and trends for any
 
 ## Features
 - Upload a public GitHub repo URL and instantly visualize:
-  - Commit frequency by hour and per day (with full date on x-axis, up to today)
+  - Commit frequency by hour and per day
   - Top contributors (pie chart)
   - Recent commits table
 - Modern, responsive UI (Bootstrap + Chart.js)
