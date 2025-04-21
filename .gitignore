@@ -49,8 +49,6 @@ coverage.xml
 
 # Docker
 *.env
-.dockerignore
-Dockerfile
 
 # Ignore local settings
 .env
