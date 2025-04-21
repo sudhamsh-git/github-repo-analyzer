@@ -18,7 +18,7 @@ A modern web application to visualize commit activity, contributors, and trends 
 
 1. **Clone the repository:**
    ```sh
-   git clone https://github.com/YOUR_USERNAME/github-repo-analyzer.git
+   git clone https://github.com/sudhamsh-git/github-repo-analyzer.git
    cd github-repo-analyzer
    ```
 2. **Build the Docker image:**
